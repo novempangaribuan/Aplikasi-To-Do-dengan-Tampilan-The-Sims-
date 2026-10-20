@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>To-Do & To-Buy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#10264d;--pan:#dff1ff;--bd:#1b4f9c;--bd2:#0c2f66;--hi:#ffffff;--acc:#3fd24a;--acc2:#1f9a2b;--hd1:#3d8cf0;--hd2:#1a4fa0;--empty:#b6d4ee;--sans:'Trebuchet MS',Verdana,Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:'VT323','Courier New',monospace;font-size:16px;color:var(--ink);min-height:100vh;display:flex;justify-content:center;padding:10px;
+ background:linear-gradient(#0b2a5b,#1e5fa8);background-attachment:fixed}
+#app{width:100%;max-width:520px}
+.tabs{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.sh{width:46px;height:52px;border:3px solid var(--bd2);background:linear-gradient(var(--hd1),var(--hd2));color:#fff;font-family:'Press Start 2P','Courier New',monospace;font-size:14px;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 var(--bd2);border-radius:6px 6px 14px 14px}
+.sh:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.55)}
+.ttl{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:4px 0;border:3px solid var(--bd2);background:linear-gradient(var(--hd1),var(--hd2));color:#fff;font-family:'Press Start 2P','Courier New',monospace;font-size:12px;letter-spacing:1px;text-shadow:2px 2px 0 var(--bd2);box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 var(--bd2)}
+.tt{text-align:center;line-height:1.2}
+.tt small{display:block;font-family:'VT323','Courier New',monospace;font-size:18px;letter-spacing:0;text-shadow:1px 1px 0 var(--bd2);margin-top:3px}
+.pb{width:14px;height:22px;background:linear-gradient(90deg,#7dff7d 0 50%,#27b335 50% 100%);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);animation:bob 1.2s ease-in-out infinite;flex:none}
+@keyframes bob{0%,100%{transform:translateY(-2px)}50%{transform:translateY(2px)}}
+
+/* ===== TO-BUY (tampilan lama, tidak diubah) ===== */
+.panel{background:var(--pan);border:4px solid var(--bd);box-shadow:inset 0 0 0 3px var(--hi),0 0 0 3px var(--bd2),0 6px 0 3px var(--bd2);padding:12px;margin:0 3px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{position:relative;border:3px solid var(--bd);background:#fff;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;min-width:0;box-shadow:inset 0 0 0 2px #fff,2px 2px 0 var(--bd2)}
+.slot:active{transform:translate(2px,2px);box-shadow:inset 0 0 0 2px #fff}
+.slot.empty{background:repeating-linear-gradient(45deg,var(--empty) 0 6px,#c8e0f4 6px 12px);border-style:dashed;color:#6d93bb;box-shadow:none}
+.slot.empty>*{visibility:hidden}
+.slot.empty::after{content:"+";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:20px;visibility:visible}
+.slot .im{aspect-ratio:1;background:#eaf5ff center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:30px;border-bottom:3px solid var(--bd);image-rendering:pixelated}
+.slot .nm2{font-size:17px;line-height:15px;padding:3px 4px 2px;height:36px;overflow:hidden;word-break:break-word;background:#fff;color:var(--bd2)}
+.slot .pr{height:8px;background:#8fb2d6;border-top:2px solid var(--bd);border-bottom:2px solid var(--bd)}
+.slot .pr i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--acc) 0 6px,var(--acc2) 6px 8px)}
+.slot .ok{position:absolute;top:2px;right:2px;font-size:16px}
+.cnt{text-align:center;font-size:17px;color:var(--bd);margin-top:10px}
+.pager{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pager button{width:44px;height:36px;border:3px solid var(--bd2);background:linear-gradient(var(--hd1),var(--hd2));color:#fff;font-family:'Press Start 2P',monospace;font-size:12px;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 var(--bd2)}
+.pager button:active{transform:translateY(2px)}
+.pager button.n{width:34px;font-size:10px;padding:0}
+.pager button.n.on{background:linear-gradient(var(--acc),var(--acc2));cursor:default}
+.hint{color:#cfe6ff;text-align:center;font-size:15px;margin-top:12px}
+dialog{border:4px solid var(--bd);background:var(--pan);box-shadow:inset 0 0 0 3px #fff,0 0 0 3px var(--bd2);max-width:92vw;width:380px;max-height:90vh;color:var(--ink);font-family:'VT323',monospace;font-size:17px;padding:14px}
+dialog::backdrop{background:rgba(5,20,50,.6)}
+dialog{opacity:1;filter:none}
+dialog label{display:block;margin:10px 0 4px;font-size:20px;color:#0a1f45}
+#dt{font-family:'Press Start 2P','Courier New',monospace;font-size:12px;color:#0a1f45;display:block;margin-bottom:4px}
+#dlg input[type=file]{font-family:'Courier New',monospace;font-size:13px;color:#0a1f45;width:100%}
+dialog input[type=text],dialog select{width:100%;padding:7px;border:3px solid var(--bd);background:#fff;font-family:inherit;font-size:20px;color:#0a1f45}
+.row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap}
+.row button{padding:7px 12px;border:3px solid var(--bd2);font-family:'Press Start 2P','Courier New',monospace;font-size:9px;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 var(--bd2)}
+.pv{width:80px;height:80px;border:3px solid var(--bd);background:#fff center/cover no-repeat;margin-top:6px;display:flex;align-items:center;justify-content:center;font-size:44px;line-height:1}
+.dh{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.pic{width:64px;height:64px;border:3px solid var(--bd);background:#fff center/cover no-repeat;flex:none;display:flex;align-items:center;justify-content:center;font-size:26px}
+.nm{flex:1;min-width:0}.nm b{display:block;word-break:break-word;font-weight:normal;font-size:20px;color:var(--bd2)}.nm small{color:#4b6d99;font-size:16px}
+.bar{height:10px;background:#8fb2d6;border:2px solid var(--bd);margin-top:5px}
+.bar i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--acc) 0 6px,var(--acc2) 6px 8px)}
+.items{max-height:42vh;overflow:auto;background:#fff;border:3px solid var(--bd);padding:2px 8px}
+.it{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:2px dotted #9fc0e2;font-size:18px}
+.it:last-child{border:0}
+.it input{width:20px;height:20px;accent-color:var(--acc2);flex:none}
+.it span{flex:1;word-break:break-word}.it.done span{text-decoration:line-through;color:#7f98b5}
+.ib{background:none;border:0;font-size:15px;cursor:pointer;padding:4px;color:var(--bd2)}
+.add{display:flex;gap:6px;margin-top:8px}
+.add input{flex:1;padding:7px;border:3px solid var(--bd);font-family:inherit;font-size:17px;min-width:0}
+.add button{border:3px solid var(--bd2);background:linear-gradient(var(--hd1),var(--hd2));color:#fff;padding:0 14px;font-family:'Press Start 2P',monospace;font-size:12px;cursor:pointer}
+
+/* ===== TO-DO (gaya Goals The Sims Bustin' Out) ===== */
+#viewTodo{margin:0 3px;container-type:inline-size}
+.stabs{display:flex;align-items:flex-end;justify-content:center;gap:4px;margin:0 10px -3px;position:relative;z-index:1}
+.stab{min-width:40px;height:30px;padding:0 8px;border:3px solid #0a1f66;border-bottom:0;border-radius:9px 9px 0 0;background:linear-gradient(#5b95f7,#1f4fc4);color:#fff;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.stab.on{height:34px;background:linear-gradient(#72e878,#1f9a2b);cursor:default}
+.stab.ar{min-width:30px;padding:0 6px;font-size:10px}
+.spanel{background:linear-gradient(#0d2a9c,#0a1a70);border:3px solid #6fb4ff;border-radius:12px;box-shadow:inset 0 0 0 2px #1b49c4,0 0 0 3px #0a1f66,0 6px 0 3px #0a1f66;padding:16px 8px 10px;position:relative}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;gap:3cqw;width:90%;width:94cqw;max-width:100%;margin:0 auto}
+.sslot{position:relative;aspect-ratio:1;border:3px solid #4d8ff0;border-radius:10px;background:linear-gradient(#0a1a66,#050e3d);cursor:pointer;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(120,170,255,.25)}
+.sslot:active{transform:translate(1px,1px)}
+.sslot .sim{position:absolute;inset:4px;border-radius:6px;background:center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:34px}
+.sslot.sel{border-color:#ff9a1f;background:linear-gradient(#ffc15a,#d9720c);box-shadow:0 0 0 2px #ffe08a,0 0 12px 2px rgba(255,160,30,.85)}
+.sslot.sempty{border-style:dashed;border-color:#2f5fb5;background:#06113f;box-shadow:none}
+.sslot.sempty::after{content:"+";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d7fd0;font-family:'Press Start 2P',monospace;font-size:18px}
+.sok{position:absolute;top:3px;right:3px;font-size:14px;z-index:2}
+.sdet{margin-top:14px;margin-top:4cqw;border:3px solid #6fb4ff;border-radius:8px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f66}
+.stitle{background:linear-gradient(#2a62e0,#123aa8);color:#ffd23f;font-family:var(--sans);font-weight:bold;font-size:18px;font-size:6cqw;padding:6px 10px;padding:1.6cqw 3.5cqw;text-shadow:1px 1px 0 #00104a;word-break:break-word;min-height:9cqw;line-height:1.25}
+.slist{padding:4px 10px;padding:1.5cqw 3.5cqw;max-height:34vh;overflow:auto;background:#000}
+.sit{display:flex;align-items:center;gap:10px;gap:3cqw;padding:8px 0;padding:1.7cqw 0;color:#fff;font-family:var(--sans);font-weight:bold;font-size:16px;font-size:5.2cqw;line-height:1.2}
+.sit span{flex:1;word-break:break-word}
+.sit.done span{text-decoration:line-through;color:#6f84b5}
+.sbx{width:22px;height:22px;width:5.5cqw;height:5.5cqw;flex:none;border:2px solid #6fb4ff;border-radius:4px;background:#07124a;color:#fff;font-family:var(--sans);font-weight:bold;font-size:13px;font-size:3.6cqw;line-height:1;cursor:pointer;padding:0}
+.sin{flex:1;min-width:0;background:#07124a;color:#fff;border:2px solid #6fb4ff;border-radius:4px;padding:1px 4px;font-family:var(--sans);font-weight:bold;font-size:16px;font-size:5.2cqw}
+.sbx.on{border-color:#bfe0ff;background:linear-gradient(#5fe06a,#1f9a2b)}
+.sdel{background:none;border:0;font-size:14px;font-size:4.2cqw;cursor:pointer;padding:2px 4px}
+.sempt{color:#7fa6e6;text-align:center;padding:16px 6px;font-family:var(--sans);font-size:14px;font-size:4.5cqw}
+.sfoot{background:#000;padding:0 10px 10px}
+dialog.sims{background:#0a2260;border-color:#4aa3ff;color:#fff;box-shadow:inset 0 0 0 3px #0e3a8f,0 0 0 3px var(--bd2)}
+dialog.sims label{color:#cfe6ff}
+dialog.sims #dt{color:#ffd23f}
+#dlg.sims input[type=file]{color:#fff}
+
+/* ===== TO-BUY (gaya layar Pockets) ===== */
+#viewBuy{margin:0 3px;container-type:inline-size}
+.bpanel{background:repeating-linear-gradient(135deg,#0f3fb8 0 10px,#0c36a4 10px 20px);border:3px solid #6fb4ff;border-radius:12px;box-shadow:inset 0 0 0 2px #1b49c4,0 0 0 3px #0a1f66,0 6px 0 3px #0a1f66;padding:10px 8px 10px}
+.bhead{display:flex;gap:8px;margin-bottom:10px}
+.bhead div{white-space:nowrap;overflow:hidden;border:3px solid #6fb4ff;border-radius:14px;background:#000;color:#fff;font-family:'VT323',monospace;text-align:center;font-size:24px;line-height:1;padding:5px 8px;box-shadow:0 0 0 2px #0a1f66}
+.bhead div{font-size:4.8cqw;text-overflow:clip}.bhead .l{flex:2.2}.bhead .r{flex:1}
+.bmain{display:flex;gap:2.4cqw;align-items:stretch}
+.bside{width:25cqw;flex:none;display:flex;flex-direction:column;justify-content:space-between;gap:1.6cqw}
+.bst{flex:1;min-height:0;display:flex;align-items:center;gap:1cqw}
+.bic{height:100%;max-height:8cqw;aspect-ratio:1;flex:none;border:2px solid #9cc8ff;border-radius:9px;background:linear-gradient(#5b95f7,#1f4fc4);display:flex;align-items:center;justify-content:center;font-size:5.6cqw;box-shadow:inset 0 2px 0 rgba(255,255,255,.4)}
+.bn{flex:1;min-width:0;height:62%;max-height:7.5cqw;border:2px solid #6fb4ff;border-radius:9px;background:#02082e;color:#fff;font-family:'VT323',monospace;font-size:5.2cqw;line-height:1;display:flex;align-items:center;justify-content:flex-end;padding:0 1.6cqw;white-space:nowrap}
+.bgrid{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1.8cqw}
+.bslot{position:relative;min-height:20cqw;min-width:0;border:3px solid #6fb4ff;border-radius:10px;background:linear-gradient(#2f6df0,#0f3aa8);cursor:pointer;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(190,220,255,.35),inset 0 -6px 0 rgba(0,20,90,.35)}
+.bslot:active{transform:translate(1px,1px)}
+.bslot .bim{position:absolute;inset:3px;border-radius:6px;background:center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11cqw}
+.bslot.sel{border-color:#ff9a1f;background:linear-gradient(#ffc15a,#d9720c);box-shadow:0 0 0 2px #ffe08a,0 0 10px 2px rgba(255,160,30,.85)}
+.bslot .bok{position:absolute;top:2px;right:3px;font-size:5cqw;z-index:2}
+.bslot .bbar{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(0,10,60,.7);z-index:2}
+.bslot .bbar i{display:block;height:100%;background:linear-gradient(#72e878,#1f9a2b)}
+.bdet{margin-top:2.6cqw;border:3px solid #6fb4ff;border-radius:14px;background:#000;box-shadow:0 0 0 2px #0a1f66;padding:2cqw 3.5cqw 2.4cqw;color:#fff;font-family:'VT323',monospace}
+.bdt{text-align:center;font-size:7cqw;line-height:1.05;word-break:break-word;margin-bottom:.8cqw}
+.bsub{text-align:center;font-size:4.6cqw;line-height:1;color:#8fc2ff;margin-bottom:1.2cqw}
+.bbarbig{height:2.2cqw;min-height:8px;border:2px solid #6fb4ff;background:#0a1a55;margin:0 0 1.4cqw}
+.bbarbig i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--acc) 0 6px,var(--acc2) 6px 8px)}
+.blist{max-height:26vh;overflow:auto}
+.bit{display:flex;align-items:center;gap:2.4cqw;padding:.7cqw 0;font-size:5.4cqw;line-height:1.05}
+.bit span{flex:1;word-break:break-word}
+.bit.done span{text-decoration:line-through;color:#6f84b5}
+.bcb{width:4.6cqw;height:4.6cqw;min-width:18px;min-height:18px;flex:none;border:2px solid #6fb4ff;border-radius:4px;background:#07124a;color:#fff;font-family:inherit;font-size:4cqw;line-height:1;cursor:pointer;padding:0}
+.bcb.on{border-color:#bfe0ff;background:linear-gradient(#5fe06a,#1f9a2b)}
+.bnone{text-align:center;color:#7fa6e6;font-size:5cqw;padding:1.5cqw 0}
+.bact{display:flex;justify-content:center;margin-top:1.6cqw}
+.bact button{padding:7px 14px;border:3px solid var(--bd2);border-radius:6px;background:linear-gradient(#5b95f7,#1f4fc4);color:#fff;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 var(--bd2)}
+.bpanel .pager{margin-top:10px}
+
+.bslot .bbar.sc{height:6px}
+.bslot .bbar.sc i.l0{background:linear-gradient(#ff7a7a,#c0392b)}
+.bslot .bbar.sc i.l1{background:linear-gradient(#ffe08a,#e0a31a)}
+.bslot .bbar.sc i.l2{background:linear-gradient(#72e878,#1f9a2b)}
+.bslot .bqty{position:absolute;right:2px;bottom:2px;min-width:5cqw;padding:0 1cqw;border-radius:6px;background:#02082e;border:2px solid #6fb4ff;color:#fff;font-family:'VT323',monospace;font-size:4.4cqw;line-height:1.1;text-align:center;z-index:2}
+.bqty.zero{border-color:#ff7a7a;color:#ff9a9a}
+.bstock{display:flex;align-items:center;justify-content:center;gap:4cqw;margin:1cqw 0 1.6cqw}
+.bstock .sb{width:11cqw;height:11cqw;min-width:44px;min-height:44px;border:3px solid var(--bd2);border-radius:10px;background:linear-gradient(#5b95f7,#1f4fc4);color:#fff;font-family:'Press Start 2P',monospace;font-size:5cqw;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 var(--bd2)}
+.bstock .sb:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.bstock .sb.plus{background:linear-gradient(#72e878,#1f9a2b)}
+.bstock .sv{min-width:18cqw;text-align:center;font-size:13cqw;line-height:1;border:3px solid #6fb4ff;border-radius:10px;background:#02082e;padding:.6cqw 2cqw}
+.bstock .sv.zero{color:#ff9a9a;border-color:#ff7a7a}
+.blvl{display:flex;gap:2cqw;margin:1cqw 0 1.6cqw}
+.blvl button{flex:1;min-width:0;padding:2.2cqw 0;border:3px solid var(--bd2);border-radius:8px;background:#0a1a55;color:#9cc0ff;font-family:'VT323',monospace;font-size:5.2cqw;line-height:1;cursor:pointer}
+.blvl button.on.l0{background:linear-gradient(#ff7a7a,#c0392b);color:#fff}
+.blvl button.on.l1{background:linear-gradient(#ffe08a,#e0a31a);color:#3a2600}
+.blvl button.on.l2{background:linear-gradient(#72e878,#1f9a2b);color:#fff}
+.blvl button.on.l3{background:linear-gradient(#6ad8ff,#1a86c8);color:#fff}
+.blab{text-align:center;font-size:4.4cqw;color:#8fc2ff;line-height:1;margin-top:1cqw}
+
+.bsidelab{font-family:'VT323',monospace;font-size:4.4cqw;line-height:1;color:#cfe6ff;text-align:center;border:2px solid #6fb4ff;border-radius:8px;background:#02082e;padding:.6cqw 0}
+.bst{cursor:pointer;min-height:8cqw}
+.bst.sel .bic{border-color:#5ff0ff;background:linear-gradient(#0e2f8f,#06134f);box-shadow:0 0 0 2px #bff8ff,0 0 10px 2px rgba(95,240,255,.9)}
+.bn.sc{font-size:3.5cqw;justify-content:center;padding:0 .6cqw}
+.bn.sc.l0{color:#ff9a9a;border-color:#ff7a7a}.bn.sc.l1{color:#ffe08a}.bn.sc.l2{color:#8dff93}.bn.sc.l3{color:#8fe3ff}
+.bn.zero{color:#ff9a9a;border-color:#ff7a7a}
+.bslot .bim.bw{filter:grayscale(1) contrast(1.05) brightness(.95)}
+.bslot .bprice{position:absolute;left:2px;bottom:2px;right:2px;padding:0 1cqw;border-radius:6px;background:rgba(2,8,46,.85);border:2px solid #6fb4ff;color:#fff;font-family:'VT323',monospace;font-size:4.6cqw;line-height:1.1;text-align:center;z-index:2;white-space:nowrap;overflow:hidden}
+.bslot.got .bprice{border-color:#72e878;color:#8dff93}
+.bstat{text-align:center;font-size:5cqw;line-height:1;margin-bottom:1.4cqw}
+.bstat.got{color:#8dff93}.bstat.no{color:#aab6d3}
+.bsv-in{width:24cqw;text-align:center;font-family:'VT323',monospace;font-size:12cqw;line-height:1;color:#fff;background:#02082e;border:3px solid #ffb13b;border-radius:10px;padding:.6cqw 1cqw}
+.bhintx{text-align:center;font-size:4cqw;color:#7fa6e6;line-height:1;margin:-.6cqw 0 1.4cqw}
+.bact{gap:8px;flex-wrap:wrap}
+.bact button.d{background:linear-gradient(#e86a5a,#c0392b)}
+.bact button.g{background:linear-gradient(#72e878,#1f9a2b)}
+
+.bnote{max-height:24vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:5cqw;line-height:1.1;color:#e6f1ff;text-align:left;margin-top:.8cqw}
+dialog textarea{width:100%;min-height:110px;padding:7px;border:3px solid var(--bd);background:#fff;font-family:inherit;font-size:19px;color:#0a1f45;resize:vertical}
+.ferr{color:#e0463a;font-size:19px;min-height:0;margin-top:6px}
+dialog.sims .ferr{color:#ff8a80}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="tabs">
+    <button class="sh" onclick="shift(-1)">L</button>
+    <div class="ttl" id="ttl"></div>
+    <button class="sh" onclick="shift(1)">R</button>
+  </div>
+
+  <div id="viewTodo">
+    <div class="stabs" id="stabs"></div>
+    <div class="spanel">
+      <div class="sgrid" id="sgrid"></div>
+      <div class="sdet" id="sdet"></div>
+    </div>
+  </div>
+
+  <div id="viewBuy">
+    <div class="bpanel">
+      <div class="bhead"><div class="l">Daftar Belanja</div><div class="r" id="bslotinfo"></div></div>
+      <div class="bmain">
+        <div class="bside" id="bside"></div>
+        <div class="bgrid" id="grid"></div>
+      </div>
+      <div class="bdet" id="bdet"></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </div>
+
+  <div class="hint">◄ L / R ► untuk pindah menu</div>
+</div>
+
+<dialog id="det"></dialog>
+
+<dialog id="cfm" style="width:300px">
+  <b id="cfmMsg" style="display:block;font-size:22px;color:#0a1f45;margin-bottom:4px"></b>
+  <div class="row">
+    <button onclick="cfm.close()" style="background:#d9e4f0;color:#0a1f45">Batal</button>
+    <button onclick="cfmOk()" style="background:#c0392b;color:#fff">Hapus</button>
+  </div>
+</dialog>
+
+<dialog id="dlg">
+  <b id="dt"></b>
+  <label>Nama</label><input type="text" id="fn" oninput="updPv()">
+  <label id="fpl">Harga</label><input type="text" id="fp" inputmode="numeric" placeholder="Rp" oninput="fmtInput(this)">
+  <label>Gambar (opsional)</label>
+  <input type="file" id="ff" accept="image/*">
+  <div class="pv" id="pv"></div>
+  <div class="ferr" id="ferr"></div>
+  <div class="row">
+    <button onclick="dlg.close()" style="background:#d9e4f0;color:#0a1f45">Batal</button>
+    <button onclick="saveCard()" style="background:#1f9a2b;color:#fff">Simpan</button>
+  </div>
+</dialog>
+
+<script>
+const KEY='misiInv_v1',PER={misi:9,inv:9},PG={misi:0,inv:0};
+const TABS=[{k:'misi',t:'TO-DO',sub:'Hal Yang Ingin Dilakukan',ic:'🎯',nw:'Misi baru',cl:'Kategori (cth: Karier, Rumah)',ph:'Tambah to-do...',dn:'Selesai'},
+            {k:'inv',t:'TO-BUY',sub:'Barang yang Ingin Dibeli',ic:'🎒',nw:'To-Buy baru',cl:'Kategori (cth: Elektronik, Pakaian)',ph:'Tambah langkah / catatan harga...',dn:'Terbeli'}];
+let S={tab:0,misi:[],inv:[],pantry:null};
+try{const d=JSON.parse(localStorage.getItem(KEY));if(d)S=Object.assign(S,d)}catch(e){}
+const seeded=!(Array.isArray(S.pantry)&&S.pantry.length);
+if(seeded){S.pv3=1;S.pv4=1;S.pantry=[
+ {id:'p1',name:'Telur',ic:'🥚',type:'count',qty:0,lvl:2},
+ {id:'p2',name:'Nasi',ic:'🍚',type:'scale',qty:0,lvl:2},
+ {id:'p3',name:'Bensin',ic:'🛢️',type:'scale',qty:0,lvl:2},
+ {id:'p5',name:'Sabun Cair',ic:'🧴',type:'scale',qty:0,lvl:2},
+ {id:'p4',name:'Shampoo',ic:'🚿',type:'scale',qty:0,lvl:2},
+ {id:'p7',name:'Sabun Batang',ic:'🧼',type:'count',qty:0,lvl:2},
+ {id:'p6',name:'Sabun Cuci Piring',ic:'🍽️',type:'scale',qty:0,lvl:2}];S.lv4=1;S.pv2=1}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Penyimpanan penuh. Hapus beberapa gambar.')}};
+// migrasi data lama: skala 3 tingkat -> 4 tingkat (ditambah Habis); catatan ceklist To-Buy -> keterangan
+if(!S.lv4){S.pantry.forEach(p=>{p.lvl=(p.lvl===undefined?1:p.lvl)+1});S.lv4=1}
+if(!S.pv2){
+  const g=id=>S.pantry.find(x=>x.id===id);
+  const p4=g('p4');if(p4&&p4.name==='Gula'){p4.name='Shampoo';p4.ic='🧴'}
+  const p5=g('p5');if(p5&&p5.name==='Garam'){p5.name='Sabun Cair';p5.ic='🚿'}
+  if(!g('p6'))S.pantry.push({id:'p6',name:'Sabun Cuci Piring',ic:'🍽️',type:'scale',qty:0,lvl:2});
+  if(!g('p7'))S.pantry.push({id:'p7',name:'Sabun Batang',ic:'🧼',type:'count',qty:0,lvl:2});
+  S.pv2=1;
+}
+if(!S.pv3){
+  const g=id=>S.pantry.find(x=>x.id===id);
+  const p3=g('p3');if(p3&&p3.name==='Minyak')p3.name='Bensin';
+  const p4=g('p4'),p5=g('p5');
+  if(p4&&p4.name==='Shampoo')p4.ic='🚿';
+  if(p5&&p5.name==='Sabun Cair')p5.ic='🧴';
+  S.pv3=1;
+}
+if(!S.pv4){
+  const o=['p1','p2','p3','p5','p4','p7','p6'],ix=x=>{const n=o.indexOf(x.id);return n<0?99:n};
+  const p2=S.pantry.find(x=>x.id==='p2');if(p2&&p2.name==='Beras')p2.name='Nasi';
+  S.pantry.sort((a,b)=>ix(a)-ix(b));
+  S.pv4=1;
+}
+S.inv.forEach(c=>{
+  if(c.note===undefined)c.note=(c.items||[]).map(i=>i.t).join('\n');
+  if(c.bought===undefined)c.bought=!!(c.items&&c.items.length&&c.items.every(i=>i.d));
+});
+save();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cur=()=>S[TABS[S.tab].k];
+const find=id=>cur().find(c=>c.id===id);
+const stat=c=>{const n=c.items.length,d=c.items.filter(i=>i.d).length;return{n,d,p:n?Math.round(d/n*100):0,all:n>0&&d===n}};
+let toolsBuy=false,editId=null,newImg,openId=null,selTodo=null,toolsOn=false,armed=null,editIdx=-1;
+const isTodo=()=>TABS[S.tab].k==='misi';
+const aid=()=>isTodo()?selTodo:openId;
+const pagesOf=k=>Math.floor(S[k].length/PER[k])+1;
+
+function goPage(n){editIdx=-1;toolsBuy=false;PG[TABS[S.tab].k]=n;toolsOn=false;armed=null;render()}
+function page(d){editIdx=-1;toolsBuy=false;const k=TABS[S.tab].k,p=pagesOf(k);PG[k]=(PG[k]+d+p)%p;toolsOn=false;armed=null;render()}
+function pick(id){editIdx=-1;if(id===armed)toolsOn=!toolsOn;else{armed=id;selTodo=id;toolsOn=false}render()}
+function shift(d){editIdx=-1;toolsBuy=false;S.tab=(S.tab+d+TABS.length)%TABS.length;toolsOn=false;armed=null;save();det.close();render()}
+document.addEventListener('keydown',e=>{if(det.open||dlg.open||/INPUT|SELECT/.test(e.target.tagName))return;
+  if(e.key==='ArrowLeft')shift(-1);if(e.key==='ArrowRight')shift(1)});
+
+function render(){
+  const T=TABS[S.tab];
+  $('ttl').innerHTML='<span class="pb"></span><div class="tt">'+T.t+'<small>'+T.sub+'</small></div><span class="pb"></span>';
+  $('viewTodo').style.display=T.k==='misi'?'':'none';
+  $('viewBuy').style.display=T.k==='inv'?'':'none';
+  if(T.k==='misi')renderTodo();else renderBuy();
+}
+
+/* ---------- TO-BUY (seperti sebelumnya) ---------- */
+let selBuy=null,selPan=null,panEdit=false,lastTap=0;
+const LV=['Habis','Sedikit','Cukup','Banyak'];
+const lvOf=c=>c.lvl===undefined?2:c.lvl;
+const dots=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const fmt=n=>'Rp '+dots(n);
+function fmtInput(el){
+  const pos=el.selectionStart,before=el.value.slice(0,pos).replace(/\D/g,'').length;
+  const f=dots(el.value.replace(/\D/g,'').replace(/^0+(?=\d)/,''));
+  el.value=f;let c=0,i=0;for(;i<f.length&&c<before;i++){if(f[i]!=='.')c++}
+  try{el.setSelectionRange(i,i)}catch(e){}
+  const er=document.getElementById('ferr');if(er)er.textContent='';
+}
+const fmtS=n=>n>=1000000?(n/1000000).toFixed(1).replace('.0','')+'jt':n>=1000?Math.round(n/1000)+'rb':String(n);
+const isBought=c=>c.bought===undefined?stat(c).all:!!c.bought;
+const pan=id=>S.pantry.find(x=>x.id===id);
+function pickBuy(id){if(!selPan&&id===selBuy){toolsBuy=!toolsBuy;render();return}selPan=null;panEdit=false;toolsBuy=false;selBuy=id;openId=id;render()}
+function pickPan(id){panEdit=false;toolsBuy=false;selPan=id;render()}
+function togBuy(){const c=find(openId);if(!c)return;c.bought=!isBought(c);save();refresh()}
+function adj(d){const c=pan(selPan);if(!c)return;c.qty=Math.max(0,(c.qty||0)+d);panEdit=false;save();render()}
+function setLv(n){const c=pan(selPan);if(!c)return;c.lvl=n;save();render()}
+function svTap(){const t=Date.now();if(t-lastTap<450){lastTap=0;panEdit=true;render();return}lastTap=t}
+function savePan(){if(!panEdit)return;const el=$('pin'),c=pan(selPan);panEdit=false;if(el&&c){const v=parseInt(String(el.value).replace(/\D/g,''),10);if(!isNaN(v))c.qty=Math.max(0,v)}save();render()}
+function renderBuy(){
+  const T=TABS[S.tab],arr=cur(),k=T.k,PERK=PER[k],pages=pagesOf(k);
+  if(PG[k]>=pages)PG[k]=pages-1;if(PG[k]<0)PG[k]=0;
+  const st=PG[k]*PERK,items=arr.slice(st,st+PERK);
+  let sc=items.find(c=>c.id===selBuy);
+  if(!sc){sc=items[0]||null;selBuy=sc?sc.id:null}
+  if(selPan&&!pan(selPan))selPan=null;
+  openId=selBuy;
+  // slot gambar (mode lama: gambar + harga, abu-abu = belum dibeli)
+  let h='';
+  for(let i=0;i<PERK;i++){
+    const c=items[i];
+    if(!c){h+='<div class="bslot" onclick="openDlg()"></div>';continue}
+    const got=isBought(c);
+    h+='<div class="bslot'+(!selPan&&c.id===selBuy?' sel':'')+(got?' got':'')+'" onclick="pickBuy(\''+c.id+'\')"><div class="bim'+(got?'':' bw')+'" style="'+(c.img?'background-image:url('+c.img+')':'')+'">'+(c.img?'':iconFor(c.name,T.ic))+'</div>'+
+       (got?'<span class="bok">✅</span>':'')+(c.price?'<div class="bprice">'+fmtS(c.price)+'</div>':'')+'</div>';
+  }
+  $('grid').innerHTML=h;
+  // kolom kiri: Daftar Bahan Pokok
+  $('bside').innerHTML='<div class="bsidelab">Bahan Pokok</div>'+S.pantry.map(p=>{
+    let v;
+    if(p.type==='scale'){const l=lvOf(p);v='<div class="bn sc l'+l+'">'+LV[l]+'</div>'}
+    else{const q=p.qty||0;v='<div class="bn'+(q<=0?' zero':'')+'">'+q+'</div>'}
+    return '<div class="bst'+(p.id===selPan?' sel':'')+'" onclick="pickPan(\''+p.id+'\')"><div class="bic">'+esc(p.ic)+'</div>'+v+'</div>';
+  }).join('');
+  $('bslotinfo').textContent=items.length+'/'+PERK+' slot';
+  // panel bawah
+  const bd=$('bdet');
+  if(selPan){
+    const p=pan(selPan);let ctl;
+    if(p.type==='scale'){
+      const l=lvOf(p);
+      ctl='<div class="blvl">'+LV.map((n,i)=>'<button class="l'+i+(i===l?' on':'')+'" onclick="setLv('+i+')">'+n+'</button>').join('')+'</div>';
+    }else{
+      const q=p.qty||0;
+      ctl='<div class="bstock"><button class="sb" onclick="adj(-1)">−</button>'+
+        (panEdit?'<input id="pin" class="bsv-in" type="text" inputmode="numeric" value="'+q+'" onkeydown="if(event.key===\'Enter\')savePan();if(event.key===\'Escape\'){panEdit=false;render()}" onblur="savePan()">'
+                :'<div class="sv'+(q<=0?' zero':'')+'" onclick="svTap()">'+q+'</div>')+
+        '<button class="sb plus" onclick="adj(1)">+</button></div><div class="bhintx">Ketuk 2x angka untuk mengetik</div>';
+    }
+    bd.innerHTML='<div class="bdt">'+esc(p.ic)+' '+esc(p.name)+'</div><div class="bsub">Bahan pokok • '+(p.type==='scale'?'Stok: '+LV[lvOf(p)]:'Stok: '+(p.qty||0))+'</div>'+ctl+
+      '';
+    if(panEdit){const e=$('pin');if(e){e.focus();e.select()}}
+  }else if(!sc){
+    bd.innerHTML='<div class="bdt">&nbsp;</div><div class="bnone">Ketuk kotak kosong untuk menambah barang.</div>';
+  }else{
+    const s=stat(sc),got=isBought(sc);
+    bd.innerHTML='<div class="bdt">'+esc(sc.name)+(got?' ✅':'')+'</div>'+
+      '<div class="bsub">'+(sc.price?fmt(sc.price):'Harga belum diisi')+'</div>'+
+      '<div class="bstat '+(got?'got':'no')+'">'+(got?'Sudah dibeli':'Belum dibeli')+'</div>'+
+      (sc.note&&sc.note.trim()?'<div class="bnote">'+esc(sc.note)+'</div>':'')+
+      '<div class="bact"><button class="'+(got?'d':'g')+'" onclick="togBuy()">'+(got?'Batal':'Tandai Terbeli')+'</button>'+(toolsBuy?'<button onclick="openDlg(selBuy)">Ubah</button><button class="d" onclick="delCard()">Hapus</button><button onclick="openDet(selBuy)">Kelola</button>':'')+'</div>';
+  }
+  // halaman
+  let pgh='';
+  if(pages>1){
+    const a=Math.floor(PG[k]/5)*5,b=Math.min(a+5,pages);
+    pgh='<button onclick="page(-1)">◄</button>';
+    for(let n=a;n<b;n++)pgh+='<button class="n'+(n===PG[k]?' on':'')+'" onclick="goPage('+n+')">'+(n+1)+'</button>';
+    pgh+='<button onclick="page(1)">►</button>';
+  }
+  $('pager').innerHTML=pgh;
+}
+function openDet(id){openId=id;drawDet();det.showModal()}
+function drawDet(){
+  const c=find(openId);if(!c){det.close();return}
+  const T=TABS[S.tab],got=isBought(c);
+  det.innerHTML='<div class="dh"><div class="pic" style="'+(c.img?'background-image:url('+c.img+')':'')+'">'+(c.img?'':iconFor(c.name,T.ic))+'</div>'+
+   '<div class="nm"><b>'+esc(c.name)+(got?' ✅ '+T.dn:'')+'</b><small>'+(c.price?fmt(c.price):'Harga belum diisi')+'</small></div></div>'+
+   '<label>Keterangan</label><textarea id="nt" placeholder="Tulis keterangan lanjutan barang ini..." oninput="saveNote(this.value)">'+esc(c.note||'')+'</textarea>'+
+   '<div class="row"><button style="background:#c0392b;color:#fff" onclick="delCard()">Hapus</button><button style="background:#1a4fa0;color:#fff" onclick="openDlg(openId)">Ubah</button>'+
+   '<button style="background:#1f9a2b;color:#fff" onclick="togBuy()">'+(got?'Batal':'Terbeli')+'</button><button style="background:#d9e4f0;color:#0a1f45" onclick="det.close();render()">Tutup</button></div>';
+}
+function saveNote(v){const c=find(openId);if(!c)return;c.note=v;save()}
+det.addEventListener('close',()=>{if(!retDet&&!dlg.open)render()});
+
+/* ---------- TO-DO (gaya The Sims Bustin' Out) ---------- */
+function renderTodo(){
+  const T=TABS[0],k='misi',arr=S.misi,PERK=PER[k],pages=pagesOf(k);
+  if(PG[k]>=pages)PG[k]=pages-1;if(PG[k]<0)PG[k]=0;
+  const st=PG[k]*PERK,items=arr.slice(st,st+PERK);
+  let sc=items.find(c=>c.id===selTodo);
+  if(!sc){sc=items[0]||null;selTodo=sc?sc.id:null}
+  // tab nomor halaman (bertambah sendiri)
+  const a=Math.floor(PG[k]/5)*5,b=Math.min(a+5,pages);
+  let th='';
+  if(pages>5)th+='<button class="stab ar" onclick="page(-1)">◄</button>';
+  for(let n=a;n<b;n++)th+='<button class="stab'+(n===PG[k]?' on':'')+'" onclick="goPage('+n+')">'+(n+1)+'</button>';
+  if(pages>5)th+='<button class="stab ar" onclick="page(1)">►</button>';
+  $('stabs').innerHTML=th;
+  // 6 gambar misi
+  let g='';
+  for(let i=0;i<PERK;i++){
+    const c=items[i];
+    if(!c){g+='<div class="sslot sempty" onclick="openDlg()"></div>';continue}
+    const s=stat(c);
+    g+='<div class="sslot'+(c.id===selTodo?' sel':'')+'" onclick="pick(\''+c.id+'\')"><div class="sim" style="'+(c.img?'background-image:url('+c.img+')':'')+'">'+(c.img?'':iconFor(c.name,T.ic))+'</div>'+(s.all?'<span class="sok">✅</span>':'')+'</div>';
+  }
+  $('sgrid').innerHTML=g;
+  // judul misi + daftar to-do
+  if(!sc){$('sdet').innerHTML='<div class="stitle">&nbsp;</div><div class="slist"><div class="sempt">Ketuk kotak + untuk membuat misi baru.</div></div>';return}
+  $('sdet').innerHTML='<div class="stitle" style="cursor:pointer" onclick="pick(selTodo)">'+esc(sc.name)+'</div>'+
+    '<div class="slist">'+(sc.items.length?sc.items.map((i,x)=>'<div class="sit'+(i.d?' done':'')+'"><button class="sbx'+(i.d?' on':'')+'" onclick="tog('+x+')">'+(i.d?'✓':'')+'</button>'+(x===editIdx?'<input id="ei" class="sin" value="'+esc(i.t)+'" onkeydown="if(event.key===\'Enter\')saveIt('+x+');if(event.key===\'Escape\'){editIdx=-1;render()}" onblur="saveIt('+x+')">':'<span style="cursor:pointer" onclick="editIt('+x+')">'+esc(i.t)+'</span>')+'<button class="sdel" onclick="delIt('+x+')">🗑</button></div>').join(''):'<div class="sempt">Belum ada to-do.</div>')+'</div>'+
+    (toolsOn?'<div class="sfoot"><div class="add"><input id="ai" placeholder="'+T.ph+'" onkeydown="if(event.key===\'Enter\')addIt()"><button onclick="addIt()">+</button></div>'+
+    '<div class="row"><button style="background:#c0392b;color:#fff" onclick="delCard()">Hapus</button><button style="background:#1a4fa0;color:#fff" onclick="openDlg(selTodo)">Ubah</button></div></div>':'');
+  if(editIdx>=0){const e=$('ei');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}}
+}
+
+/* ---------- aksi bersama ---------- */
+function refresh(){if(det.open)drawDet();render()}
+function editIt(x){editIdx=x;render()}
+function saveIt(x){if(editIdx!==x)return;const el=$('ei');editIdx=-1;const v=el?el.value.trim():'';if(v)find(selTodo).items[x].t=v;save();render()}
+function tog(x){const c=find(aid());c.items[x].d=!c.items[x].d;save();refresh()}
+function delIt(x){find(aid()).items.splice(x,1);save();refresh()}
+function addIt(){const el=$('ai'),v=el.value.trim();if(!v)return;find(aid()).items.push({t:v,d:false});save();refresh();$('ai').focus()}
+let cfmCb=null;
+function askYes(msg,cb){$('cfmMsg').textContent=msg;cfmCb=cb;cfm.showModal()}
+function cfmOk(){const f=cfmCb;cfmCb=null;cfm.close();if(f)f()}
+function delCard(){askYes('Hapus ini beserta isinya?',()=>{const k=TABS[S.tab].k,id=aid();S[k]=S[k].filter(c=>c.id!==id);if(isTodo()){selTodo=null;toolsOn=false;armed=null}toolsBuy=false;save();det.close();render()})}
+
+
+/* ---------- simbol otomatis dari kata yang diketik ---------- */
+const ICONS=[
+['mesin cuci|laundry|londri|cuci|mencuci|menjemur','🧺'],
+['cuci piring|sabun cuci','🍽️'],
+['cuci mobil|cuci motor|car wash','🧽'],
+['servis|service|perbaik|memperbaiki|reparasi|montir|bengkel|oli|tune up|rakit|merakit|=bor|palu|obeng|tukang|renovasi|pasang','🔧'],
+['kaos kaki','🧦'],
+['bangun pagi|alarm|bangun tidur','⏰'],
+['bensin|pertamax|pertalite|solar|bbm','⛽'],
+['sepeda motor|motor|skuter|vespa|scooter','🏍️'],
+['sepeda|gowes','🚲'],
+['mobil|car|sedan|suv|avanza|innova|pajero|mudik|pulang kampung','🚗'],
+['truk|pickup|truck','🚚'],
+['bus|bis','🚌'],
+['kereta|krl|mrt|lrt','🚆'],
+['pesawat|flight|bandara','✈️'],
+['tiket|ticket','🎫'],
+['kapal|ferry|perahu','🚢'],
+['helm','⛑️'],
+['handphone|hp|ponsel|smartphone|iphone|android|telepon genggam|samsung|xiaomi|oppo|vivo','📱'],
+['tablet|ipad','📲'],
+['laptop|notebook|macbook|chromebook','💻'],
+['komputer|pc|monitor|imac','🖥️'],
+['headphone|earphone|headset|airpods|earbuds','🎧'],
+['speaker|soundbar','🔊'],
+['kamera|camera|dslr|mirrorless|gopro|cctv','📷'],
+['televisi|tv','📺'],
+['jam tangan|smartwatch|arloji','⌚'],
+['printer','🖨️'],
+['keyboard musik|piano|organ','🎹'],
+['keyboard','⌨️'],
+['mouse','🖱️'],
+['playstation|ps5|ps4|xbox|nintendo|konsol|console|game|gim|gaming','🎮'],
+['powerbank|power bank|baterai|battery','🔋'],
+['charger|kabel|colokan','🔌'],
+['router|wifi|internet|modem|paket data|pulsa|kuota','📶'],
+['kopi|coffee|kafe|cafe','☕'],
+['teh|tea','🍵'],
+['susu|milk','🥛'],
+['air minum|galon|minum|air mineral','💧'],
+['jus|juice|smoothie|boba|soda|cola','🥤'],
+['telur','🥚'],
+['nasi|beras|rice','🍚'],
+['mie|indomie|ramen|bakmi|pasta|spageti','🍜'],
+['ayam|chicken','🍗'],
+['daging|steak|sapi|kambing|sate|bakso','🥩'],
+['ikan|seafood|udang|salmon','🐟'],
+['roti|bread|toast','🍞'],
+['ulang tahun|birthday|bday','🎂'],
+['kue|cake|brownies|donat|donut|cookie|biskuit','🍰'],
+['pizza','🍕'],
+['burger|hamburger','🍔'],
+['kentang|fries','🍟'],
+['es krim|ice cream','🍦'],
+['pisang','🍌'],
+['jeruk','🍊'],
+['mangga','🥭'],
+['anggur','🍇'],
+['semangka','🍉'],
+['strawberry|stroberi','🍓'],
+['buah|apel','🍎'],
+['sayur|salad|brokoli|wortel','🥗'],
+['coklat|cokelat|chocolate','🍫'],
+['permen|candy','🍬'],
+['snack|camilan|keripik|popcorn','🍿'],
+['masak|memasak|resep|dapur|kompor|wajan|panci|microwave|oven|airfryer|air fryer|blender|mixer','🍳'],
+['rice cooker|magic com','🍚'],
+['makan|restoran|resto|dinner|lunch|sarapan|kuliner','🍽️'],
+['belanja|supermarket|groceries|pasar|mall|mal','🛒'],
+['kulkas|freezer|lemari es','🧊'],
+['ac|air conditioner|pendingin','❄️'],
+['kipas','🌀'],
+['lampu|bohlam|lamp','💡'],
+['kasur|ranjang|bantal|bed|selimut','🛏️'],
+['sofa|couch','🛋️'],
+['kursi|chair|meja|desk','🪑'],
+['lemari|wardrobe|rak','🚪'],
+['rumah sakit|operasi|opname','🏥'],
+['rumah|house|kpr|kontrakan|kost|kos','🏠'],
+['apartemen|apartment|gedung','🏢'],
+['kamar mandi|toilet|kloset','🚿'],
+['sabun mandi|sabun batang','🧼'],
+['sabun|sampo|shampoo|shampo','🧴'],
+['makeup|make up|lipstik|kosmetik|bedak','💄'],
+['parfum|perfume|skincare|serum|lotion|krim','🧴'],
+['dokter gigi|sikat gigi|odol|pasta gigi|gigi','🦷'],
+['obat|vitamin|apotek|suplemen','💊'],
+['dokter|checkup|check up|berobat|periksa|klinik|sehat|sakit|flu|demam|batuk','🩺'],
+['olahraga|gym|fitness|workout|latihan|angkat beban','🏋️'],
+['lari|jogging|marathon|run','🏃'],
+['yoga|meditasi|mindfulness','🧘'],
+['renang|berenang|swim','🏊'],
+['sepak bola|futsal|bola|football|soccer','⚽'],
+['basket','🏀'],
+['badminton|bulutangkis|bulu tangkis|raket','🏸'],
+['tenis|tennis','🎾'],
+['voli|volly|volley','🏐'],
+['hiking|mendaki|gunung','⛰️'],
+['camping|tenda|kemah','⛺'],
+['pantai|beach|laut|snorkeling|diving|selam','🏖️'],
+['liburan|vacation|holiday|jalan-jalan|wisata|trip|tour|piknik','🏝️'],
+['hotel|penginapan|resort|villa|airbnb','🏨'],
+['paspor|passport|visa|imigrasi','🛂'],
+['koper|luggage|backpacker','🧳'],
+['peta|=map|navigasi','🗺️'],
+['ransel|backpack','🎒'],
+['dompet|wallet','👛'],
+['tas|handbag','👜'],
+['kemeja|blazer|jas','👔'],
+['dress|gaun|kebaya|batik','👗'],
+['celana|jeans|rok','👖'],
+['jaket|coat|mantel','🧥'],
+['sepatu|sneakers|sneaker|boots|running','👟'],
+['sandal|sendal','👡'],
+['topi|cap|hat','🧢'],
+['kacamata|glasses|lensa kontak','👓'],
+['baju|kaos|tshirt|t-shirt|pakaian|kaus|hoodie|sweater|setrika','👕'],
+['cincin|=ring|emas|perhiasan|kalung|gelang|anting','💍'],
+['investasi|saham|reksadana|reksa dana|crypto|bitcoin|trading','📈'],
+['asuransi|bpjs','🛡️'],
+['uang|duit|tabung|nabung|tabungan|saving|gaji|salary|bonus|pendapatan|income|dana','💰'],
+['bayar|tagihan|bill|pajak|cicilan|utang|hutang|kredit|pinjaman|lunasi','🧾'],
+['bank|atm|rekening|transfer','🏦'],
+['wisuda|ijazah|lulus|graduate|toga|gelar|skripsi|tesis|thesis','🎓'],
+['ujian|exam|tes|quiz|ulangan','📝'],
+['belajar|kuliah|sekolah|kursus|les|study|kelas|course|tugas|pr|toefl|ielts','📚'],
+['buku|novel|baca|membaca|komik|majalah|perpustakaan','📖'],
+['rapat|meeting|zoom|kolaborasi','👥'],
+['presentasi|presentation|slide|ppt|laporan|report','📊'],
+['kerja|karier|karir|kantor|pekerjaan|bisnis|usaha|promosi|lamaran|cv|interview|wawancara|office|=job|proyek|project','💼'],
+['dokumen|surat|berkas|formulir|ktp|sim|kk','📄'],
+['menulis|nulis|tulis|blog|artikel|jurnal|diary|catatan|essay|cerpen','✍️'],
+['cat tembok|mengecat|cat rumah|dinding|menggambar|gambar|lukis|melukis|=art|desain|design|sketsa|ilustrasi','🎨'],
+['foto|photo|fotografi|selfie','📸'],
+['film|bioskop|movie|nonton|netflix|series|drakor','🎬'],
+['musik|lagu|music|konser|spotify|playlist|album','🎵'],
+['gitar','🎸'],
+['drum','🥁'],
+['nyanyi|menyanyi|karaoke|vokal','🎤'],
+['biola|violin','🎻'],
+['kebun|berkebun|tanam|menanam|tanaman|garden|bibit','🌱'],
+['bunga|flower|mawar','🌸'],
+['pohon|tree','🌳'],
+['mancing|memancing|fishing','🎣'],
+['kucing|kitten','🐱'],
+['anjing|=dog|puppy','🐶'],
+['burung|bird|parkit','🐦'],
+['kelinci|rabbit','🐰'],
+['hamster','🐹'],
+['hewan|=pet|peliharaan|adopsi|=vet','🐾'],
+['hadiah|kado|gift|surprise|kejutan','🎁'],
+['nikah|menikah|pernikahan|wedding|lamar|tunangan|resepsi','💒'],
+['bayi|baby|bunting|hamil|melahirkan|stroller|popok','👶'],
+['mainan|=toy|lego|boneka','🧸'],
+['anak|kids|balita','🧒'],
+['keluarga|ibu|ayah|orang tua|mama|=papa|bapak|family','👪'],
+['pacar|kencan|=date|cinta|romantis|valentine|anniversary|jodoh','❤️'],
+['teman|sahabat|friend|reuni|nongkrong|hangout','🤝'],
+['pesta|party|perayaan|syukuran|arisan','🎉'],
+['natal|christmas|misa|gereja','🎄'],
+['lebaran|idul fitri|idul adha|puasa|ramadan|ramadhan|sholat|salat|masjid|ngaji|mengaji|quran|umrah|haji','🕌'],
+['sapu|menyapu|mengepel|=pel|bersih|membersihkan|beres-beres|cleaning|vacuum','🧹'],
+['sampah|trash|buang','🗑️'],
+['listrik|token|pln','⚡'],
+['pdam|ledeng|keran|pipa|saluran','🚰'],
+['kunci|=lock|gembok|brankas|keamanan','🔑'],
+['gunting rambut|cukur|potong rambut|salon|barber|rambut|creambath','💇'],
+['spa|pijat|massage|relaksasi|refleksi','💆'],
+['istirahat|tidur','😴'],
+['piala|juara|menang|lomba|kompetisi|turnamen|medali|trophy|champion','🏆'],
+['relawan|volunteer|donasi|sedekah|amal|zakat|charity|berbagi','🤲'],
+['jadwal|agenda|kalender|reminder|pengingat|deadline|rencana|planning','📅'],
+['waktu|jam|timer','⏰'],
+['email|surel','📧'],
+['telepon|telpon|=call|menelepon|hubungi','📞'],
+['chat|whatsapp|wa|sms','💬'],
+['aplikasi|=app|website|=web|coding|program|programming|software|bug|developer','💻'],
+['ai|robot|chatbot','🤖']
+].map(([k,e])=>[k.split('|').map(w=>{const st=w[0]==='='||w.replace(/^=/,'').length<=3;const t=w.replace(/^=/,'');return{t,st}}),e]);
+function iconFor(name,def){
+  const n=' '+String(name||'').toLowerCase().replace(/[^a-z0-9\- ]+/g,' ').replace(/\s+/g,' ')+' ';
+  if(n.trim()==='')return def;
+  for(const [ks,e] of ICONS)for(const k of ks)if(k.st?n.includes(' '+k.t+' '):n.includes(k.t))return e;
+  return def;
+}
+function updPv(){
+  const T=TABS[S.tab],c=editId?find(editId):null,has=imgJob||newImg||(c&&c.img);
+  $('pv').textContent=has?'':iconFor($('fn').value,T.ic);
+}
+
+let retDet=null,imgJob=null;
+function openDlg(id){
+  retDet=det.open?openId:null;if(det.open)det.close();
+  editId=id||null;newImg=undefined;imgJob=null;
+  const T=TABS[S.tab],c=id?find(id):null;
+  dlg.classList.toggle('sims',T.k==='misi');
+  $('fpl').style.display=$('fp').style.display=T.k==='misi'?'none':'';
+  $('fp').value=c&&c.price?dots(c.price):'';
+  $('ferr').textContent='';$('pv').style.opacity=1;
+  $('dt').textContent=c?'Ubah':T.nw;
+  $('fn').value=c?c.name:'';$('ff').value='';
+  $('pv').style.backgroundImage=c&&c.img?'url('+c.img+')':'';
+  updPv();
+  dlg.showModal();
+}
+function processImage(f){
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(f),im=new Image();
+    im.onload=()=>{
+      try{
+        const sz=256,cv=document.createElement('canvas');cv.width=cv.height=sz;
+        const m=Math.min(im.width,im.height),sx=(im.width-m)/2,sy=(im.height-m)/2;
+        cv.getContext('2d').drawImage(im,sx,sy,m,m,0,0,sz,sz);
+        res(cv.toDataURL('image/jpeg',.75));
+      }catch(e){rej(e)}finally{URL.revokeObjectURL(u)}
+    };
+    im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};
+    im.src=u;
+  });
+}
+$('ff').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  $('ferr').textContent='';$('pv').style.opacity=.4;
+  const job=processImage(f);imgJob=job;
+  job.then(u=>{if(imgJob===job){newImg=u;$('pv').style.backgroundImage='url('+u+')';$('pv').style.opacity=1;updPv()}})
+     .catch(()=>{if(imgJob===job){imgJob=null;$('pv').style.opacity=1;$('ferr').textContent='Gambar tidak bisa dibaca, coba gambar lain.'}});
+};
+function saveCard(){
+  const k=TABS[S.tab].k,name=$('fn').value.trim(),err=$('ferr');
+  if(!name){err.textContent='Nama wajib diisi.';return}
+  let price=0;
+  if(k==='inv'){
+    const d=$('fp').value.replace(/\D/g,'');
+    if(!d){err.textContent='Harga wajib diisi.';return}
+    price=parseInt(d,10);
+  }
+  const job=imgJob,img0=newImg;imgJob=null;newImg=undefined;
+  let id;
+  if(editId){
+    const c=find(editId);id=editId;
+    if(c){c.name=name;if(k==='inv')c.price=price;if(img0!==undefined)c.img=img0}
+  }else{
+    id='c'+Date.now();
+    S[k].push({id,name,cat:'',img:img0||'',items:[],note:'',bought:false,price});
+    if(k==='misi'){selTodo=id;toolsOn=true;armed=id}else{selBuy=id;selPan=null;panEdit=false;toolsBuy=false}
+    PG[k]=Math.floor((S[k].length-1)/PER[k]);
+  }
+  save();dlg.close();if(det.open)drawDet();render();
+  // gambar yang masih diproses dipasang menyusul, tanpa menahan penutupan jendela
+  if(job&&img0===undefined)job.then(u=>{const c=S[k].find(x=>x.id===id);if(c){c.img=u;save();if(det.open)drawDet();render()}}).catch(()=>{});
+}
+dlg.addEventListener('close',()=>{if(retDet){const id=retDet;retDet=null;if(find(id))openDet(id)}});
+render();
+</script>
+</body>
+</html>
